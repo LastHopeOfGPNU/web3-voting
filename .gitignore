@@ -80,3 +80,11 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+
+# Hardhat specific files
+cache/
+artifacts/
+typechain/
+typechain-types/
+hardhat.config.js
+hardhat.config.ts
