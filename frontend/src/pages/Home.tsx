@@ -25,8 +25,8 @@ export default function Home() {
           id={p.id}
           title={p.title}
           description={p.description}
-          forVotes={Number(p.forVotes)}
-          againstVotes={Number(p.againstVotes)}
+          forVotes={p.forVotes}
+          againstVotes={p.againstVotes}
           onView={onView}
         />
       ))}

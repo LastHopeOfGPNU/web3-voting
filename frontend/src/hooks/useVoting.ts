@@ -3,6 +3,16 @@ import { useReadContract } from 'wagmi'
 import { Voting__factory } from '../../../types/ethers-contracts/factories/Voting__factory'
 import { getVotingAddress } from '../utils/contract'
 
+export type ProposalListItem = {
+  id: number
+  title: string
+  description: string
+  forVotes: bigint
+  againstVotes: bigint
+  creator: string
+  deadline: bigint
+}
+
 export function useVotingContract() {
   const address = getVotingAddress('sepolia') as `0x${string}`
   const abi = Voting__factory.abi as any
@@ -40,20 +50,17 @@ export function useProposalsList(maxCount = 20) {
 
   const rangeQuery = useProposalsRange(start, Math.min(Number(countQuery.data || 0n), maxCount))
 
-  const proposals = useMemo(() => {
-    const c = Number(countQuery.data || 0n)
-    const len = rangeQuery.data ? (rangeQuery.data[0]?.length || 0) : 0
-    if (!rangeQuery.data || len === 0) return [] as Array<{
-      id: number
-      title: string
-      description: string
-      forVotes: bigint
-      againstVotes: bigint
-      creator: string
-      deadline: bigint
-    }>
-    const [descriptions, votesFor, votesAgainst, creators, deadlines] = rangeQuery.data
-    return descriptions.map((desc, i) => ({
+  const proposals = useMemo<ProposalListItem[]>(() => {
+    const len = (rangeQuery.data as any)?.[0]?.length || 0
+    if (!rangeQuery.data || len === 0) return []
+    const [descriptions, votesFor, votesAgainst, creators, deadlines] = (rangeQuery.data as any) as [
+      string[],
+      bigint[],
+      bigint[],
+      string[],
+      bigint[]
+    ]
+    return (descriptions as string[]).map((desc: string, i: number) => ({
       id: start + i,
       title: desc.slice(0, 48) || `Proposal #${start + i}`,
       description: desc,
@@ -62,7 +69,7 @@ export function useProposalsList(maxCount = 20) {
       creator: creators[i],
       deadline: deadlines[i],
     }))
-  }, [countQuery.data, rangeQuery.data, start])
+  }, [rangeQuery.data, start])
 
   return { countQuery, rangeQuery, proposals, start }
 }
@@ -80,7 +87,14 @@ export function useProposal(id: number | null) {
       creator: string
       deadline: bigint
     }
-    const [description, voteCountFor, voteCountAgainst, , creator, deadline] = q.data
+    const [description, voteCountFor, voteCountAgainst, _exists, creator, deadline] = (q.data as any) as [
+      string,
+      bigint,
+      bigint,
+      boolean,
+      string,
+      bigint
+    ]
     return { id: id!, description, forVotes: voteCountFor, againstVotes: voteCountAgainst, creator, deadline }
   }, [q.data, id])
   return { query: q, data }
