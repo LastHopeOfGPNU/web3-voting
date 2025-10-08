@@ -4,6 +4,7 @@ import VoteButton from '../components/VoteButton'
 import { useProposal, useVotingContract } from '../hooks/useVoting'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
 import { decodeErrorResult } from 'viem'
+import { useTranslation } from 'react-i18next'
 
 function useProposalId(): number | null {
   const [id, setId] = useState<number | null>(() => {
@@ -22,6 +23,7 @@ function useProposalId(): number | null {
 }
 
 export default function ProposalDetail() {
+  const { t } = useTranslation()
   const id = useProposalId()
   const { data, query } = useProposal(id)
   const isLoading = query.status === 'pending'
@@ -51,22 +53,22 @@ export default function ProposalDetail() {
 
   const onVote = async (support: boolean) => {
     if (id == null) {
-      alert('无效的提案 ID。')
+      alert(t('messages.invalidProposalId'))
       return
     }
     if (!isConnected) {
-      alert('请先连接钱包再进行投票。')
+      alert(t('messages.connectWallet'))
       return
     }
     const deadlineSec = data ? Number(data.deadline) : 0
     const isClosed = data ? Math.floor(Date.now() / 1000) > deadlineSec : false
     const hasVoted = Boolean(hasVotedQuery.data)
     if (isClosed) {
-      alert('投票已截止。')
+      alert(t('messages.votingClosed'))
       return
     }
     if (hasVoted) {
-      alert('你已对该提案投过票，不能重复投票。')
+      alert(t('messages.alreadyVoted'))
       return
     }
     try {
@@ -77,7 +79,7 @@ export default function ProposalDetail() {
         args: [BigInt(id), support]
       })
       setTxHash(hash as `0x${string}`)
-      alert(`交易已提交：\n${hash}`)
+      alert(t('messages.txSubmitted', { hash }))
     } catch (e: any) {
       let decodedName = ''
       const dataHex = e?.data ?? e?.cause?.data ?? e?.cause?.error?.data
@@ -88,28 +90,28 @@ export default function ProposalDetail() {
         } catch {}
       }
       const mapped = decodedName === 'AlreadyVoted'
-        ? '你已对该提案投过票，不能重复投票。'
+        ? t('messages.alreadyVoted')
         : decodedName === 'VotingClosed'
-          ? '投票已截止，无法继续投票。'
+          ? t('messages.votingClosed')
           : decodedName === 'ProposalNotExist'
-            ? '提案不存在或已被移除。'
+            ? t('messages.proposalNotExist')
             : ''
-      const msg = mapped || e?.shortMessage || e?.message || '提交投票失败'
-      alert(`投票失败：\n${msg}`)
+      const msg = mapped || e?.shortMessage || e?.message || t('proposalDetail.submitFailed')
+      alert(msg)
     }
   }
 
   const notFound = useMemo(() => id == null || (!isLoading && !data), [id, isLoading, data])
 
-  if (notFound) return <div style={{ color: '#fff' }}>Proposal not found.</div>
+  if (notFound) return <div style={{ color: '#fff' }}>{t('proposalDetail.notFound')}</div>
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
-      {isLoading && <div style={{ color: '#fff' }}>正在加载提案...</div>}
-      {isError && <div style={{ color: '#ff8888' }}>加载失败，请检查网络或控制台。</div>}
+      {isLoading && <div style={{ color: '#fff' }}>{t('proposalDetail.loading')}</div>}
+      {isError && <div style={{ color: '#ff8888' }}>{t('proposalDetail.loadFailed')}</div>}
       {data && (
         <>
-          <h2 style={{ color: '#fff', margin: 0 }}>{`Proposal #${data.id}`}</h2>
+          <h2 style={{ color: '#fff', margin: 0 }}>{t('proposalDetail.idTitle', { id: data.id })}</h2>
           <p style={{ color: '#fff' }}>{data.description}</p>
           <ResultBar forVotes={data.forVotes} againstVotes={data.againstVotes} />
           {(() => {
@@ -118,37 +120,37 @@ export default function ProposalDetail() {
             const hasVoted = Boolean(hasVotedQuery.data)
             return (
               <div style={{ display: 'flex', gap: 8 }}>
-                <VoteButton label="Vote For" onClick={() => onVote(true)} variant='for' disabled={isPending || isClosed || hasVoted} />
-                <VoteButton label="Vote Against" onClick={() => onVote(false)} variant='against' disabled={isPending || isClosed || hasVoted} />
+                <VoteButton label={t('buttons.voteFor')} onClick={() => onVote(true)} variant='for' disabled={isPending || isClosed || hasVoted} />
+                <VoteButton label={t('buttons.voteAgainst')} onClick={() => onVote(false)} variant='against' disabled={isPending || isClosed || hasVoted} />
               </div>
             )
           })()}
           {hasVotedQuery.status === 'pending' && (
-            <div style={{ color: '#fff' }}>正在读取投票状态...</div>
+            <div style={{ color: '#fff' }}>{t('proposalDetail.readingVoteState')}</div>
           )}
           {Boolean(hasVotedQuery.data) && (
-            <div style={{ color: '#fff' }}>你已投票。</div>
+            <div style={{ color: '#fff' }}>{t('proposalDetail.alreadyVotedNote')}</div>
           )}
           {Math.floor(Date.now() / 1000) > Number(data.deadline) && (
-            <div style={{ color: '#ff8888' }}>投票已截止。</div>
+            <div style={{ color: '#ff8888' }}>{t('proposalDetail.closedNote')}</div>
           )}
           {(isPending) && (
-            <div style={{ color: '#fff' }}>正在提交投票，请在钱包中确认...</div>
+            <div style={{ color: '#fff' }}>{t('proposalDetail.submitting')}</div>
           )}
           {txHash && (
-            <div style={{ color: '#fff' }}>交易哈希：{txHash}</div>
+            <div style={{ color: '#fff' }}>{t('proposalDetail.txHash', { hash: txHash })}</div>
           )}
           {txHash && wait.isLoading && (
-            <div style={{ color: '#fff' }}>交易已提交，正在等待区块确认...</div>
+            <div style={{ color: '#fff' }}>{t('proposalDetail.waitingConfirm')}</div>
           )}
           {txHash && wait.isError && (
-            <div style={{ color: '#ff8888' }}>交易确认失败，请稍后重试。</div>
+            <div style={{ color: '#ff8888' }}>{t('proposalDetail.confirmFailed')}</div>
           )}
           {txHash && wait.isSuccess && (
-            <div style={{ color: '#9cff9c' }}>交易已确认！票数已刷新。</div>
+            <div style={{ color: '#9cff9c' }}>{t('proposalDetail.confirmSuccess')}</div>
           )}
           {error && (
-            <div style={{ color: '#ff8888' }}>提交失败，请检查钱包或网络。</div>
+            <div style={{ color: '#ff8888' }}>{t('proposalDetail.submitFailed')}</div>
           )}
         </>
       )}

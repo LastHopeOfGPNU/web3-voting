@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import LiquidEther from './components/LiquidEther'
 import WalletConnectButton from './components/WalletConnectButton'
+import LanguageSwitcher from './components/LanguageSwitcher'
+import { useTranslation } from 'react-i18next'
 import Home from './pages/Home'
 import Create from './pages/Create'
 import ProposalDetail from './pages/ProposalDetail'
@@ -17,6 +19,7 @@ function useRoute() {
 }
 
 function App() {
+  const { t } = useTranslation()
   const route = useRoute()
   const content = useMemo(() => {
     if (route.startsWith('/proposal/')) return <ProposalDetail />
@@ -46,12 +49,13 @@ function App() {
 
       <div style={{ position: 'absolute', top: 16, left: 16, right: 16, zIndex: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
         <nav style={{ display: 'flex', gap: 8 }}>
-          <a href="#/" style={{ padding: '8px 12px', background: '#ffffffaa', borderRadius: 12, backdropFilter: 'blur(8px)' }}>Home</a>
-          <a href="#/create" style={{ padding: '8px 12px', background: '#ffffffaa', borderRadius: 12, backdropFilter: 'blur(8px)' }}>Create</a>
+          <a href="#/" style={{ padding: '8px 12px', background: '#ffffffaa', borderRadius: 12, backdropFilter: 'blur(8px)' }}>{t('nav.home')}</a>
+          <a href="#/create" style={{ padding: '8px 12px', background: '#ffffffaa', borderRadius: 12, backdropFilter: 'blur(8px)' }}>{t('nav.create')}</a>
         </nav>
         <div style={{ marginLeft: 'auto' }}>
           <WalletConnectButton />
         </div>
+        <LanguageSwitcher />
       </div>
 
       <div style={{ position: 'absolute', inset: 0, padding: 24, zIndex: 5 }}>

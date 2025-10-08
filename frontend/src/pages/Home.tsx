@@ -1,7 +1,9 @@
 import ProposalCard from '../components/ProposalCard'
 import { useProposalsList } from '../hooks/useVoting'
+import { useTranslation } from 'react-i18next'
 
 export default function Home() {
+  const { t } = useTranslation()
   const { proposals, countQuery, rangeQuery } = useProposalsList(20)
   const proposalCount = Number(countQuery.data || 0n)
   const rangeEnabled = proposalCount > 0
@@ -14,9 +16,9 @@ export default function Home() {
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
-      {isLoading && <div style={{ color: '#fff' }}>正在加载链上提案...</div>}
-      {isError && <div style={{ color: '#ff8888' }}>加载提案失败，请检查网络或控制台。</div>}
-      {!isLoading && proposals.length === 0 && <div style={{ color: '#fff' }}>暂无提案。</div>}
+      {isLoading && <div style={{ color: '#fff' }}>{t('home.loadingProposals')}</div>}
+      {isError && <div style={{ color: '#ff8888' }}>{t('home.loadFailed')}</div>}
+      {!isLoading && proposals.length === 0 && <div style={{ color: '#fff' }}>{t('home.noProposals')}</div>}
       {proposals.map(p => (
         <ProposalCard
           key={p.id}
